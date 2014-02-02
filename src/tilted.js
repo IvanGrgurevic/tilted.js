@@ -81,21 +81,15 @@ THE SOFTWARE.
 		return this;
 	};
 
-	// private Maps
+	// vars
 	var trackerMap = new Map() // holds named trakers
 	, gestureMap = new Map() // holds different types of gestuers
 	, eventListenerMap = new Map() // holds different types of event listeners
-	, dispatchedEventsMap = new Map(); // contains a boolean value that determines if an event was dispatched
+	, dispatchedEventsMap = new Map() // contains a boolean value that determines if an event was dispatched
+	, measure = {} //you will get null if hardware is missing
+	, Gesture = function() { return this; }; // empty gesture class
 
-	/**
-	Measure class holds the IMU data
 
-	@private
-	@class measure
-	@static
-	**/
-	var measure = {}; //you will get null if hardware is missing
-	// orientation
 	measure.orientation = {
 		absolute: null,
 		alpha: null,
@@ -103,7 +97,6 @@ THE SOFTWARE.
 		gamma: null,
 		timeStamp: null
 	};
-	// motion
 	measure.motion = {
 		acceleration: {
 			x: null,
@@ -124,6 +117,7 @@ THE SOFTWARE.
 		timeStamp: null
 	};
 
+
 	/**
 	Checks if all events were dispatched, and returns a boolean value indicating so
 
@@ -131,8 +125,7 @@ THE SOFTWARE.
 	@method allEventsDispatched
 	@return {Boolean} whether all IMU events were dispatched or not 
 	**/
-	function allEventsDispatched() {
-		var events = dispatchedEventsMap.size();
+	var allEventsDispatched = function() {
 		var count = 0;
 
 		// get count of true values
@@ -142,7 +135,7 @@ THE SOFTWARE.
 			}
 		});
 
-		if(count === events) {
+		if(count === dispatchedEventsMap.size()) {
 			// put all values in map to false 
 			dispatchedEventsMap.each(function(key, value) {
 				dispatchedEventsMap.put(key, false);
@@ -160,11 +153,17 @@ THE SOFTWARE.
 	@private
 	@method detectGestures
 	**/
-	function detectGestures() {
+	var detectGestures = function() {
 		if(allEventsDispatched()) {
 			// detect gestures
-			gestureMap.each(function(key, gesture) {
-				gesture.detector(measure);
+			var gesture;
+
+			eventListenerMap.each(function(key, callback) {
+				gesture = gestureMap.get(key);
+
+				if(gesture instanceof Gesture) {
+					gesture.detector(measure);
+				}
 			});
 		}
 	}
@@ -175,7 +174,7 @@ THE SOFTWARE.
 	@private
 	@method addEventListeners
 	**/
-	function addEventListeners() {
+	var addEventListeners = function() {
 		// attach orientation event listener
 		if(window.DeviceOrientationEvent != undefined) { // dont if(window.DeviceOrientationEvent) because of safari
 			window.addEventListener('deviceorientation', function(event) {	
@@ -299,8 +298,7 @@ THE SOFTWARE.
 	@method createGesture
 	@param {String} gestureName The name of the gesture
 	@param {Object} defaultProperties A object that contains properties for the gesture
-	@param {Function} gestureDetector A function that evaluates the measurement data,
-		and determines whether it was a gesture or not
+	@param {Function} gestureDetector A function that evaluates the measurement data, and determines whether it was a gesture or not
 	@return {Gesture} A gesture object
 	**/
 	$tilted.createGesture = function(gestureName, defaultProperties, gestureDetector) {
@@ -314,19 +312,11 @@ THE SOFTWARE.
 			window.dispatchEvent(gestureEvent);
 		}
 		
-		/**
-		Gesure Class
-
-		@class Gesture
-		@constructor
-		@private
-		**/
-		var Gesture = function() {
-			return this;
-		};
 		Gesture.prototype = defaultProperties;
-		// store gesture object
+
+		// new gesture object
 		var gesture = new Gesture();
+
 		// add to gesture map
 		gestureMap.put(gestureName, gesture);
 
