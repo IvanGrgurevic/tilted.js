@@ -31,8 +31,10 @@ module.exports = function(grunt) {
                 +'\n'
       },
       build: {
-        src: 'src/<%= pkg.name %>.js',
-        dest: 'build/<%= pkg.name %>.min.js'
+        files: {
+          'build/<%= pkg.name %>.min.js': 'src/<%= pkg.name %>.js',
+          'demo/js/<%= pkg.name %>.min.js': 'src/<%= pkg.name %>.js'
+        }
       }
     }
   });
